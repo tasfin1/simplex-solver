@@ -1,0 +1,672 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simplex Method — MAT316 Operations Research</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+  }
+
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .card h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #93c5fd;
+    margin-bottom: 14px;
+  }
+
+  .row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: end;
+    margin-bottom: 12px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 0.75rem; color: #94a3b8; font-weight: 500; }
+
+  input, select {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    background: #0f172a;
+    border: 1px solid #475569;
+    color: #e2e8f0;
+    border-radius: 6px;
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus { border-color: #60a5fa; }
+  input[type=number] { width: 70px; }
+
+  .btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: #3b82f6; color: #fff; }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-green { background: #10b981; color: #fff; }
+  .btn-green:hover { background: #059669; }
+  .btn-amber { background: #f59e0b; color: #1e293b; }
+  .btn-amber:hover { background: #d97706; }
+  .btn-red { background: #ef4444; color: #fff; }
+  .btn-red:hover { background: #dc2626; }
+
+  #matrixInput table {
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  #matrixInput td { padding: 3px; }
+  #matrixInput input { width: 60px; text-align: center; }
+  #matrixInput .header {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: #93c5fd;
+    text-align: center;
+    padding-bottom: 4px;
+    font-weight: 600;
+  }
+  #matrixInput .rowLabel {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: #fbbf24;
+    text-align: right;
+    padding-right: 8px;
+    font-weight: 500;
+  }
+
+  /* Simplex Tableau Styling */
+  .tableau-wrap {
+    margin-bottom: 20px;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .tableau-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fbbf24;
+    margin-bottom: 8px;
+  }
+
+  .tableau-info {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    line-height: 1.6;
+  }
+  .tableau-info span.enter { color: #34d399; font-weight: 600; }
+  .tableau-info span.leave { color: #f87171; font-weight: 600; }
+  .tableau-info span.val { color: #fbbf24; font-weight: 600; }
+
+  table.simplex {
+    border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    margin-bottom: 6px;
+  }
+  table.simplex th, table.simplex td {
+    border: 1px solid #475569;
+    padding: 6px 12px;
+    text-align: center;
+    min-width: 55px;
+  }
+  table.simplex th {
+    background: #334155;
+    color: #93c5fd;
+    font-weight: 600;
+  }
+  table.simplex td { background: #1e293b; }
+
+  table.simplex tr:last-child td {
+    border-top: 3px solid #60a5fa;
+    background: #1a2744;
+  }
+  table.simplex td.pivot {
+    background: #3b82f6 !important;
+    color: #fff;
+    font-weight: 700;
+  }
+  table.simplex td.enter-col { background: #1e3a2f !important; }
+  table.simplex td.leave-row { background: #3a1e1e !important; }
+  table.simplex td.ratio { color: #fbbf24; font-style: italic; }
+  table.simplex .bv {
+    color: #fbbf24;
+    font-weight: 600;
+    text-align: right;
+    background: #1a2744;
+  }
+
+  .status-optimal {
+    background: #064e3b;
+    border: 1px solid #10b981;
+    color: #6ee7b7;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-top: 8px;
+  }
+  .status-unbounded {
+    background: #451a03;
+    border: 1px solid #f59e0b;
+    color: #fcd34d;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-top: 8px;
+  }
+
+  .example-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .example-btns .btn { font-size: 0.72rem; padding: 6px 12px; }
+
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<h1>Simplex Method Solver</h1>
+<p class="subtitle">Interactive Simplex Method Tableau Generator</p>
+
+<!-- Setup Card -->
+<div class="card" id="setupCard">
+  <h2>1. Problem Setup</h2>
+  <div class="row">
+    <div class="field">
+      <label>Variables (n)</label>
+      <input type="number" id="numVars" value="5" min="2" max="20">
+    </div>
+    <div class="field">
+      <label>Constraints (m)</label>
+      <input type="number" id="numCons" value="2" min="1" max="15">
+    </div>
+    <div class="field">
+      <label>Problem Type</label>
+      <select id="problemType">
+        <option value="min">Minimize</option>
+        <option value="max">Maximize</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="generateMatrix()">Generate Input Matrix</button>
+  </div>
+
+  <div id="matrixInput"></div>
+
+  <div class="row" style="margin-top: 14px;">
+    <button class="btn btn-green" onclick="startSimplex()">▶ Start Simplex</button>
+  </div>
+
+  <div class="example-btns">
+    <span style="font-size:0.75rem; color:#94a3b8; align-self:center;">Load example:</span>
+    <button class="btn btn-amber" onclick="loadExample('minLec')">Min (Lecture 12)</button>
+    <button class="btn btn-amber" onclick="loadExample('maxLec')">Max (Lecture 13)</button>
+    <button class="btn btn-amber" onclick="loadExample('unbounded')">Unbounded (P7)</button>
+    <button class="btn btn-amber" onclick="loadExample('p10a')">P10(a) Max</button>
+  </div>
+</div>
+
+<!-- Output Card -->
+<div class="card hidden" id="outputCard">
+  <h2>2. Simplex Iterations</h2>
+  <div class="row">
+    <button class="btn btn-primary" onclick="nextIteration()">Next Iteration →</button>
+    <button class="btn btn-green" onclick="solveAll()">Solve All at Once</button>
+    <button class="btn btn-red" onclick="resetSolver()">Reset</button>
+  </div>
+  <div id="tableaux" style="margin-top: 16px;"></div>
+</div>
+
+<script>
+// ===== Fraction Library (for exact arithmetic) =====
+function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; }
+
+class Frac {
+  constructor(n, d = 1) {
+    if (d === 0) throw new Error("Division by zero");
+    if (d < 0) { n = -n; d = -d; }
+    const g = gcd(Math.abs(n), d);
+    this.n = n / g;
+    this.d = d / g;
+  }
+  static from(v) {
+    if (v instanceof Frac) return v;
+    if (typeof v === 'string') {
+      v = v.trim();
+      if (v.includes('/')) {
+        const [a, b] = v.split('/').map(Number);
+        return new Frac(a, b);
+      }
+      if (v.includes('.')) {
+        const dec = v.split('.')[1]?.length || 0;
+        const mul = Math.pow(10, dec);
+        return new Frac(Math.round(parseFloat(v) * mul), mul);
+      }
+      return new Frac(parseInt(v) || 0);
+    }
+    if (Number.isInteger(v)) return new Frac(v);
+    // float to fraction
+    const dec = v.toString().split('.')[1]?.length || 0;
+    const mul = Math.pow(10, dec);
+    return new Frac(Math.round(v * mul), mul);
+  }
+  add(o) { o = Frac.from(o); return new Frac(this.n * o.d + o.n * this.d, this.d * o.d); }
+  sub(o) { o = Frac.from(o); return new Frac(this.n * o.d - o.n * this.d, this.d * o.d); }
+  mul(o) { o = Frac.from(o); return new Frac(this.n * o.n, this.d * o.d); }
+  div(o) { o = Frac.from(o); return new Frac(this.n * o.d, this.d * o.n); }
+  neg() { return new Frac(-this.n, this.d); }
+  isZero() { return this.n === 0; }
+  isPos() { return this.n > 0; }
+  isNeg() { return this.n < 0; }
+  val() { return this.n / this.d; }
+  toString() {
+    if (this.d === 1) return `${this.n}`;
+    return `${this.n}/${this.d}`;
+  }
+  toHTML() {
+    if (this.d === 1) return `${this.n}`;
+    const sign = this.n < 0 ? '−' : '';
+    const an = Math.abs(this.n);
+    return `${sign}<sup>${an}</sup>&frasl;<sub>${this.d}</sub>`;
+  }
+}
+
+const ZERO = new Frac(0);
+const ONE = new Frac(1);
+
+// ===== State =====
+let state = null;  // { n, m, varNames, basisIdx, tableau (m+1 x n+1 Frac matrix), type, iteration, done }
+
+function generateMatrix() {
+  const n = parseInt(document.getElementById('numVars').value);
+  const m = parseInt(document.getElementById('numCons').value);
+  const div = document.getElementById('matrixInput');
+
+  let html = '<table>';
+  // Header row
+  html += '<tr><td></td>';
+  for (let j = 0; j < n; j++) html += `<td class="header">x<sub>${j+1}</sub></td>`;
+  html += '<td class="header">RHS</td></tr>';
+
+  // Constraint rows
+  for (let i = 0; i < m; i++) {
+    html += `<tr><td class="rowLabel">Eq ${i+1}</td>`;
+    for (let j = 0; j < n; j++) html += `<td><input type="text" id="a_${i}_${j}" value="0"></td>`;
+    html += `<td><input type="text" id="b_${i}" value="0"></td></tr>`;
+  }
+
+  // z-row
+  html += `<tr><td class="rowLabel">z-row</td>`;
+  for (let j = 0; j < n; j++) html += `<td><input type="text" id="z_${j}" value="0"></td>`;
+  html += `<td><input type="text" id="z_rhs" value="0"></td></tr>`;
+
+  // Basic variable labels
+  html += '<tr><td></td>';
+  html += `<td colspan="${n+1}" style="padding-top:10px;">`;
+  html += `<span style="font-size:0.75rem;color:#94a3b8;">Basic variables (indices, e.g. for x₅,x₄ enter: </span>`;
+  html += `<input type="text" id="basisInput" value="" placeholder="5,4" style="width:120px;">`;
+  html += `</td></tr>`;
+
+  html += '</table>';
+  div.innerHTML = html;
+}
+
+function readTableau() {
+  const n = parseInt(document.getElementById('numVars').value);
+  const m = parseInt(document.getElementById('numCons').value);
+  const type = document.getElementById('problemType').value;
+
+  // Read matrix
+  const tableau = [];
+  for (let i = 0; i < m; i++) {
+    const row = [];
+    for (let j = 0; j < n; j++) row.push(Frac.from(document.getElementById(`a_${i}_${j}`).value));
+    row.push(Frac.from(document.getElementById(`b_${i}`).value)); // RHS
+    tableau.push(row);
+  }
+  // z-row
+  const zrow = [];
+  for (let j = 0; j < n; j++) zrow.push(Frac.from(document.getElementById(`z_${j}`).value));
+  zrow.push(Frac.from(document.getElementById(`z_rhs`).value));
+  tableau.push(zrow);
+
+  // Basis
+  const basisStr = document.getElementById('basisInput').value.trim();
+  const basisIdx = basisStr.split(',').map(s => parseInt(s.trim()) - 1); // 0-indexed
+
+  // Variable names
+  const varNames = [];
+  for (let j = 0; j < n; j++) varNames.push(`x<sub>${j+1}</sub>`);
+
+  return { n, m, varNames, basisIdx, tableau, type, iteration: 0, done: false, message: '' };
+}
+
+function startSimplex() {
+  state = readTableau();
+  document.getElementById('outputCard').classList.remove('hidden');
+  document.getElementById('tableaux').innerHTML = '';
+  renderTableau(state, -1, -1, null, true);
+}
+
+function resetSolver() {
+  state = null;
+  document.getElementById('outputCard').classList.add('hidden');
+  document.getElementById('tableaux').innerHTML = '';
+}
+
+// ===== Simplex Step =====
+function simplexStep() {
+  if (!state || state.done) return;
+
+  const { n, m, tableau, type, basisIdx } = state;
+  const zrow = tableau[m]; // last row
+
+  // Find entering variable
+  let enterCol = -1;
+  let bestVal = ZERO;
+
+  if (type === 'min') {
+    // Minimization: look for most negative coefficient in z-row
+    for (let j = 0; j < n; j++) {
+      if (zrow[j].isNeg() && (enterCol === -1 || zrow[j].val() < bestVal.val())) {
+        enterCol = j;
+        bestVal = zrow[j];
+      }
+    }
+  } else {
+    // Maximization: look for most negative coefficient in z-row (since we store z - cx = rhs)
+    for (let j = 0; j < n; j++) {
+      if (zrow[j].isNeg() && (enterCol === -1 || zrow[j].val() < bestVal.val())) {
+        enterCol = j;
+        bestVal = zrow[j];
+      }
+    }
+  }
+
+  if (enterCol === -1) {
+    // Optimal
+    state.done = true;
+    state.message = 'optimal';
+    renderTableau(state, -1, -1, null, false);
+    return;
+  }
+
+  // Minimum ratio test
+  let leaveRow = -1;
+  let minRatio = null;
+  const ratios = [];
+
+  for (let i = 0; i < m; i++) {
+    if (tableau[i][enterCol].isPos()) {
+      const ratio = tableau[i][n].div(tableau[i][enterCol]); // RHS / coeff
+      ratios.push(ratio);
+      if (minRatio === null || ratio.val() < minRatio.val()) {
+        minRatio = ratio;
+        leaveRow = i;
+      }
+    } else {
+      ratios.push(null);
+    }
+  }
+
+  if (leaveRow === -1) {
+    // Unbounded
+    state.done = true;
+    state.message = 'unbounded';
+    renderTableau(state, enterCol, -1, ratios, false);
+    return;
+  }
+
+  // Show current tableau with pivot highlighted
+  state.iteration++;
+  renderTableau(state, enterCol, leaveRow, ratios, false);
+
+  // Perform pivot
+  const pivotVal = tableau[leaveRow][enterCol];
+
+  // Scale pivot row
+  for (let j = 0; j <= n; j++) {
+    tableau[leaveRow][j] = tableau[leaveRow][j].div(pivotVal);
+  }
+
+  // Eliminate in all other rows (including z-row)
+  for (let i = 0; i <= m; i++) {
+    if (i === leaveRow) continue;
+    const factor = tableau[i][enterCol];
+    if (!factor.isZero()) {
+      for (let j = 0; j <= n; j++) {
+        tableau[i][j] = tableau[i][j].sub(factor.mul(tableau[leaveRow][j]));
+      }
+    }
+  }
+
+  // Update basis
+  basisIdx[leaveRow] = enterCol;
+}
+
+function nextIteration() {
+  if (state && !state.done) simplexStep();
+}
+
+function solveAll() {
+  if (!state) return;
+  let safety = 0;
+  while (!state.done && safety < 100) {
+    simplexStep();
+    safety++;
+  }
+}
+
+// ===== Render Tableau =====
+function renderTableau(st, enterCol, leaveRow, ratios, isInitial) {
+  const { n, m, varNames, basisIdx, tableau, type, iteration } = st;
+  const container = document.getElementById('tableaux');
+  const div = document.createElement('div');
+  div.className = 'tableau-wrap';
+
+  // Title
+  const titleStr = isInitial ? 'Initial Tableau' : `Iteration ${iteration}`;
+  let infoHTML = '';
+
+  if (!isInitial && enterCol >= 0) {
+    const enterName = varNames[enterCol];
+    if (leaveRow >= 0) {
+      const leaveName = varNames[basisIdx[leaveRow]];
+      infoHTML = `Entering: <span class="enter">${enterName}</span> (z-row coeff = ${tableau[m][enterCol].toHTML()}) &nbsp;|&nbsp; `;
+      if (ratios) {
+        const ratioStrs = ratios.map((r, i) => r !== null ? `${tableau[i][n].toHTML()}/${tableau[i][enterCol].toHTML()} = ${r.toHTML()}` : '—');
+        infoHTML += `Ratios: [${ratioStrs.join(', ')}] &nbsp;|&nbsp; `;
+      }
+      infoHTML += `Min ratio → row of <span class="leave">${leaveName}</span> leaves &nbsp;|&nbsp; Pivot: (${leaveRow+1}, ${enterCol+1})`;
+    } else {
+      infoHTML = `Entering: <span class="enter">${enterName}</span> (z-row coeff = ${tableau[m][enterCol].toHTML()}) &nbsp;|&nbsp; `;
+      infoHTML += `All column coefficients ≤ 0 — <span class="leave">NO leaving variable!</span>`;
+    }
+  }
+
+  // Build table HTML
+  let html = `<div class="tableau-title">${titleStr}</div>`;
+  if (infoHTML) html += `<div class="tableau-info">${infoHTML}</div>`;
+
+  html += '<table class="simplex">';
+
+  // Header
+  html += '<tr><th></th>';
+  for (let j = 0; j < n; j++) {
+    html += `<th>${varNames[j]}</th>`;
+  }
+  html += '<th>RHS</th>';
+  if (ratios && leaveRow >= 0) html += '<th>Ratio</th>';
+  html += '</tr>';
+
+  // Constraint rows
+  for (let i = 0; i < m; i++) {
+    html += '<tr>';
+    html += `<td class="bv">${varNames[basisIdx[i]]}</td>`;
+    for (let j = 0; j < n; j++) {
+      let cls = '';
+      if (i === leaveRow && j === enterCol) cls = 'pivot';
+      else if (j === enterCol) cls = 'enter-col';
+      else if (i === leaveRow) cls = 'leave-row';
+      html += `<td class="${cls}">${tableau[i][j].toHTML()}</td>`;
+    }
+    // RHS
+    let rhsCls = (i === leaveRow) ? 'leave-row' : '';
+    html += `<td class="${rhsCls}">${tableau[i][n].toHTML()}</td>`;
+    // Ratio
+    if (ratios && leaveRow >= 0) {
+      html += `<td class="ratio">${ratios[i] !== null ? ratios[i].toHTML() : '—'}</td>`;
+    }
+    html += '</tr>';
+  }
+
+  // z-row
+  html += '<tr>';
+  html += `<td class="bv">z</td>`;
+  for (let j = 0; j < n; j++) {
+    let cls = (j === enterCol) ? 'enter-col' : '';
+    html += `<td class="${cls}">${tableau[m][j].toHTML()}</td>`;
+  }
+  html += `<td>${tableau[m][n].toHTML()}</td>`;
+  if (ratios && leaveRow >= 0) html += '<td></td>';
+  html += '</tr>';
+
+  html += '</table>';
+
+  // Status messages
+  if (st.done) {
+    if (st.message === 'optimal') {
+      let solHTML = '<strong>Optimal solution found!</strong><br>';
+      // Extract solution
+      const solution = new Array(n).fill(ZERO);
+      for (let i = 0; i < m; i++) solution[basisIdx[i]] = tableau[i][n];
+      solHTML += 'Solution: ';
+      const parts = [];
+      for (let j = 0; j < n; j++) parts.push(`${varNames[j]} = ${solution[j].toHTML()}`);
+      solHTML += parts.join(', ');
+      const zVal = tableau[m][n];
+      if (type === 'min') {
+        solHTML += `<br>z<sub>min</sub> = <span class="val">−${zVal.toHTML()}</span> (negated from table RHS = ${zVal.toHTML()})`;
+        // Actually for minimization z = -(-z) so the actual z is negative of what's shown if we tracked -z
+        // But in our format, the z-row RHS IS the current z value directly
+        solHTML = '<strong>All z-row coefficients are ≥ 0. STOP — Optimal!</strong><br>';
+        solHTML += 'Solution: ' + parts.join(', ');
+        solHTML += `<br>Optimal z = <span class="val">${zVal.neg().toHTML()}</span>`;
+      } else {
+        solHTML = '<strong>All z-row coefficients are ≥ 0. STOP — Optimal!</strong><br>';
+        solHTML += 'Solution: ' + parts.join(', ');
+        solHTML += `<br>Optimal z = <span class="val">${zVal.toHTML()}</span>`;
+      }
+      html += `<div class="status-optimal">${solHTML}</div>`;
+    } else {
+      html += `<div class="status-unbounded"><strong>UNBOUNDED!</strong> The entering variable ${varNames[enterCol]} has all non-positive coefficients in the constraint column. It can increase indefinitely, so z is unbounded.</div>`;
+    }
+  }
+
+  div.innerHTML = html;
+  container.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ===== Examples =====
+function loadExample(name) {
+  let n, m, A, b, zrow, zrhs, basis, type;
+
+  if (name === 'minLec') {
+    // Lecture 12 minimization example
+    n = 5; m = 3; type = 'min';
+    A = [[1,0,0,2,-1],[0,1,0,-1,-5],[0,0,1,6,-12]];
+    b = [10, 20, 18];
+    zrow = [0, 0, 0, -2, 3];
+    zrhs = 60;
+    basis = [1, 2, 3];
+  } else if (name === 'maxLec') {
+    // Lecture 13 max example (converted to min -z)
+    n = 6; m = 3; type = 'max';
+    A = [[3,2,0,1,0,0],[-1,1,4,0,1,0],[2,-2,5,0,0,1]];
+    b = [60, 10, 50];
+    zrow = [-2, -3, -3, 0, 0, 0];
+    zrhs = 0;
+    basis = [4, 5, 6];
+  } else if (name === 'unbounded') {
+    // Problem 7 - unbounded
+    n = 7; m = 3; type = 'max';
+    A = [[1,-2,4,3,1,0,0],[-4,6,5,-4,0,1,0],[2,-3,3,8,0,0,1]];
+    b = [20, 40, 50];
+    zrow = [-5, -1, -3, -4, 0, 0, 0];
+    zrhs = 0;
+    basis = [5, 6, 7];
+  } else if (name === 'p10a') {
+    // Problem 10(a) max z=2x1+3x2
+    n = 4; m = 2; type = 'max';
+    A = [[1,2,1,0],[2,1,0,1]];
+    b = [6, 8];
+    zrow = [-2, -3, 0, 0];
+    zrhs = 0;
+    basis = [3, 4];
+  }
+
+  document.getElementById('numVars').value = n;
+  document.getElementById('numCons').value = m;
+  document.getElementById('problemType').value = type;
+  generateMatrix();
+
+  for (let i = 0; i < m; i++) {
+    for (let j = 0; j < n; j++) document.getElementById(`a_${i}_${j}`).value = A[i][j];
+    document.getElementById(`b_${i}`).value = b[i];
+  }
+  for (let j = 0; j < n; j++) document.getElementById(`z_${j}`).value = zrow[j];
+  document.getElementById('z_rhs').value = zrhs;
+  document.getElementById('basisInput').value = basis.join(',');
+}
+
+// Initialize
+generateMatrix();
+</script>
+</body>
+</html>
